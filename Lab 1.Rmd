@@ -5,10 +5,8 @@ date: '2023-01-13'
 output: html_document
 ---
 
-```{r}
-
-{r setup, include=TRUE, echo=TRUE, warning=FALSE, message=FALSE}# turn off warning and message for this chunk
-knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)# turn off the warning and message for every other chunk
+```{r setup, include=TRUE, echo=TRUE, warning=FALSE, message= FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 ```{r}
@@ -17,4 +15,59 @@ library(here)
 library(sf)
 library(tmap)
 ```
+
+### Read in the data
+The data you'll use (to start) is within the `data/sf_trees` subfolder. Use the `here` package to read in the `sf_trees.csv` file.
+```{r}
+sf_trees <- read_csv(here("data", "sf_trees", "sf_trees.csv"))
+```
+
+About the data: SF trees data are from the [SF Open Data Portal](https://data.sfgov.org/City-Infrastructure/Street-Tree-List/tkzw-k3nq). See more information from Thomas Mock and TidyTuesday [here](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-01-28).
+
+Check out the data using exploratory functions (e.g. `View()`, `names()`, `summary()`, etc.). Remember that those probably do **not** belong in your .Rmd code chunks (if you don't need a record, you can either comment it out or put it in the Console).
+
+### Part 1: Wrangling & ggplot review
+**Example 1:** Find counts of observations by `legal_status` & wrangle a bit:
+```{r}
+# Way 1: group_by %>% summarize %>% n
+sf_trees %>% 
+  group_by(legal_status) %>% 
+  summarize(tree_count = n())
+```
+
+```{r}
+# Way 2: Same thing (+ a few other dplyr functions)
+top_5_status <- sf_trees %>% 
+  count(legal_status) %>% 
+  drop_na(legal_status) %>% 
+  rename(tree_count = n) %>% 
+  relocate(tree_count) %>% 
+  slice_max(tree_count, n = 5) %>% 
+  arrange(-tree_count)
+```
+
+```{r}
+#same as above
+top_trees <- sf_trees %>% 
+  group_by(legal_status) %>% 
+  summarize(tree_count = n()) %>% 
+  slice_max(tree_count, n=5) %>% # function that finds the maximum of the variables
+  arrange(-tree_count)
+```
+
+Make a graph of top 10 from above:
+```{r}
+# fct reorder puts things in order of largest to smallest
+# coord_flip = swap the axis 
+ggplot(data = top_trees, aes(x = fct_reorder(legal_status, tree_count), y = tree_count)) +
+  geom_col() +
+  labs(y = "Tree count", x = "Legal Status") +
+  coord_flip() +
+  theme_minimal() 
+```
+
+
+
+
+
 
